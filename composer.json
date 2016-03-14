@@ -1,0 +1,34 @@
+{
+    "name": "natanaelsimoes/zeus-framework",
+    "type": "library",
+    "description": "A lightweight framework with an annotation-based approach for routing",
+    "keywords": ["php", "framework", "annotation"],
+    "homepage": "https://github.com/natanaelsimoes/zeus-framework",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Natanael Simões",
+            "email": "natanael.simoes@ifro.edu.br",
+            "homepage": "http://www.natanaelsimoes.com",
+            "role": "Professor"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0",
+        "saxulum/saxulum-annotation-manager": "1.2.0",
+        "doctrine/orm": "v2.5.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "4.8.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Zeus\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ZeusTest\\": "test/src/"
+        }
+    }
+}
