@@ -15,12 +15,12 @@ class Database
     private function __construct()
     {
         $zConf = Configuration::getInstance();
-        if (!isset($zConf->database)) {
+        if (!is_null($zConf->getDatabase())) {
             $ormConfig = Setup::createAnnotationMetadataConfiguration(
                             array($zConf->getInitialDirectory())
                             , $zConf->inDevelopment());
             $this->entityManager = EntityManager::create(array(
-                        'driver' => "pdo_{$zConf->getDatabase()->driver}",
+                        'driver' => $zConf->getDatabase()->driver,
                         'user' => $zConf->getDatabase()->username,
                         'password' => $zConf->getDatabase()->password,
                         'dbname' => $zConf->getDatabase()->dbname,

@@ -2,25 +2,30 @@
 
 namespace Zeus\Cache;
 
-class Dummy implements Proxy\CacheType
+class Dummy implements \Doctrine\Common\Cache\Cache
 {
 
-    public function fetch($var)
+    public function fetch($id)
     {
         return false;
     }
 
-    public function store($var, $value, $time = CacheTime::ONE_HOUR)
+    public function contains($id)
     {
         return false;
     }
 
-    public function delete($var)
+    public function save($id, $data, $lifeTime = CacheTime::ONE_HOUR)
     {
         return false;
     }
 
-    public function clear()
+    public function delete($id)
+    {
+        return false;
+    }
+
+    public function getStats()
     {
         return false;
     }

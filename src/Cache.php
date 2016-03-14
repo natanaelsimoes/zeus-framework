@@ -5,9 +5,14 @@ namespace Zeus;
 class Cache
 {
 
+    const DIR = './cache';
+
+    /**
+     *
+     * @var \Doctrine\Common\Cache\Cache
+     */
     private static $cache = null;
     private static $instance;
-    public $doCache = false;
 
     /**
      * @return Cache
@@ -25,13 +30,36 @@ class Cache
     {
         $zConf = Configuration::getInstance();
         switch ($zConf->getCache()) {
-            case 'apc': self::$cache = new Cache\APC;
+            case 'apc':
+                self::$cache = new \Doctrine\Common\Cache\ApcuCache;
                 break;
-            case 'eaccelerator': self::$cache = new Cache\EAccelerator;
+            case 'couchbase':
+                self::$cache = new \Doctrine\Common\Cache\CouchbaseCache;
                 break;
-            case 'xcache': self::$cache = new Cache\XCache;
+            case 'file':
+                self::$cache = new \Doctrine\Common\Cache\FilesystemCache(self::DIR);
                 break;
-            case 'file': self::$cache = new Cache\File;
+            case 'mem':
+                self::$cache = new \Doctrine\Common\Cache\MemcacheCache;
+                break;
+            case 'mongodb':
+                throw new \Exception('MongoDB not implemented yet.');
+            case 'phpfile':
+                self::$cache = new \Doctrine\Common\Cache\PhpFileCache(self::DIR);
+                break;
+            case 'redis':
+                self::$cache = new \Doctrine\Common\Cache\RedisCache;
+                break;
+            case 'riak':
+                throw new \Exception('Riak not implmenented yet.');
+            case 'wincache':
+                self::$cache = new \Doctrine\Common\Cache\WinCacheCache;
+                break;
+            case 'xcache':
+                self::$cache = new \Doctrine\Common\Cache\XcacheCache;
+                break;
+            case 'zend':
+                self::$cache = new \Doctrine\Common\Cache\ZendDataCache;
                 break;
             case 'none':
             default:
@@ -45,21 +73,19 @@ class Cache
         throw new Exception('Clone is not allowed.');
     }
 
-    public function setDirectory($dir)
+    public function fetch($id)
     {
-        if (self::$cache instanceof Cache\File) {
-            self::$cache->setDirectory($dir);
-        }
+        return self::$cache->fetch($id);
     }
 
-    public function fetch($var)
+    public function contais($id)
     {
-        return self::$cache->fetch($var);
+        return self::$cache->contains($id);
     }
 
-    public function store($var, $value, $time = Cache\CacheTime::ONE_HOUR)
+    public function save($id, $data, $lifeTime = Cache\CacheTime::ONE_HOUR)
     {
-        return self::$cache->store($var, $value, $time);
+        return self::$cache->save($id, $data, $lifeTime);
     }
 
     public function delete($var)
@@ -67,25 +93,24 @@ class Cache
         return self::$cache->delete($var);
     }
 
-    public function clear()
+    public function getStats()
     {
-        return self::$cache->clear();
+        return self::$cache->getStats();
     }
 
     public static function setCache($data)
     {
         $cache = self::getInstance();
         $uri = filter_input(INPUT_SERVER, 'REQUEST_URI');
-        $cache->store($uri, $data, Cache\CacheTime::ONE_HOUR);
+        $cache->save($uri, $data);
     }
 
     public static function getCache()
     {
         $cache = self::getInstance();
         $uri = filter_input(INPUT_SERVER, 'REQUEST_URI');
-        $data = $cache->fetch($uri);
-        if ($data !== false) {
-            print_r($data);
+        if ($cache->contais($uri)) {
+            print_r($cache->fetch($uri));
             exit;
         }
     }

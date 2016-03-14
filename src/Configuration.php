@@ -52,7 +52,7 @@ class Configuration
 
     public function getDatabase()
     {
-        return $this->file->database;
+        return (isset($this->file->database)) ? $this->file->database : null;
     }
 
     public function inDevelopment()
@@ -63,6 +63,26 @@ class Configuration
     public function getIndex()
     {
         return $this->file->routes->index;
+    }
+
+    public function getCache()
+    {
+        if (isset($this->file->cache)) {
+            if (strpos('/', $this->file->cache) !== false) {
+                return explode('/', $this->file->cache)[0];
+            }
+            return $this->file->cache;
+        }
+    }
+
+    public function getCacheParam()
+    {
+        if (isset($this->file->cache)) {
+            if (strpos('/', $this->file->cache) !== false) {
+                return explode('/', $this->file->cache)[1];
+            }
+            return null;
+        }
     }
 
 }
