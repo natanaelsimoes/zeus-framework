@@ -1,4 +1,5 @@
 vendor/
+nbproject/
 composer.lock
 cache/
 routes.json
