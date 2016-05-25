@@ -3,6 +3,7 @@
 namespace Zeus;
 
 use Doctrine\Common\Annotations\AnnotationRegistry;
+use Doctrine\Common\Annotations\SimpleAnnotationReader;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Saxulum\AnnotationManager\Manager\AnnotationManager;
 use Zeus\Annotations\Route;
@@ -44,13 +45,13 @@ class Routes
     {
         $zConf = Configuration::getInstance();
         if ($zConf->inDevelopment()) {
-            AnnotationRegistry::registerFile(__DIR__ . '/Annotations/Route.php');
+            AnnotationRegistry::registerAutoloadNamespace('\Zeus\Annotations');
             $route = new Route;
             $annotationReader = new AnnotationReader();
             $routes = array();
             foreach (self::getAllClasses() as $class) {
+                $className = $class->getName();
                 foreach ($class->getMethodInfos() as $method) {
-                    $className = $class->getName();
                     $methodName = $method->getName();
                     $ref = new \ReflectionMethod($className, $methodName);
                     $annot = $annotationReader->getMethodAnnotation($ref, $route);
@@ -59,10 +60,14 @@ class Routes
                     }
                 }
             }
-            $routes['index'] = $routes[$zConf->getIndex()];
-            $routes['routes/update'] = __CLASS__ . '::updateRoutes';
-            file_put_contents(self::PATH, json_encode($routes, JSON_PRETTY_PRINT));
-            echo 'Routes updated.';
+            if (!isset($routes[$zConf->getIndex()])) {
+                var_dump($routes);
+                echo "Index pattern '{$zConf->getIndex()}' is route for no class within this project.";
+            } else {
+                $routes['index'] = $routes[$zConf->getIndex()];
+                file_put_contents(self::PATH, json_encode($routes, JSON_PRETTY_PRINT));
+                echo 'Routes updated.';
+            }
         } else {
             echo 'Zeus is not in development mode. Please change this parameter to update routes.';
         }
@@ -70,7 +75,7 @@ class Routes
 
     private static function getAllClasses()
     {
-        $annotationReader = new AnnotationReader();
+        $annotationReader = new SimpleAnnotationReader();
         $annotationManager = new AnnotationManager($annotationReader);
         $zConf = Configuration::getInstance();
         return $annotationManager->buildClassInfosBasedOnPath(
@@ -79,25 +84,29 @@ class Routes
 
     public function loadRoutes()
     {
-        $mainScript = end(explode('/', filter_input(INPUT_SERVER, 'PHP_SELF')));
+        $uriInfo = explode('/', filter_input(INPUT_SERVER, 'PHP_SELF'));
+        $mainScript = end($uriInfo);
         $selfPart = str_replace($mainScript, '', filter_input(INPUT_SERVER, 'PHP_SELF'));
         $request = str_replace($selfPart, '', filter_input(INPUT_SERVER, 'REQUEST_URI'));
+        $query = strpos($request, '?');
+        if ($query !== false) {
+            $request = substr($request, 0, $query);
+        }
         if (substr($request, -1) == '/') {
             $this->request = substr($request, 0, -1);
         } else {
             $this->request = $request;
+        }
+        if ($request === 'routes/update') {
+            self::updateRoutes();
+            exit;
         }
         if (file_exists(self::PATH)) {
             $this->routes = json_decode(file_get_contents(self::PATH));
             $this->patterns = array_keys(get_object_vars($this->routes));
             return $this;
         } else {
-            if ($request === 'routes/update') {
-                self::updateRoutes();
-                exit;
-            } else {
-                throw new \Exception('Routes file do not exists. Please, run routes/update.');
-            }
+            throw new \Exception('Routes file do not exists. Please, run routes/update.');
         }
     }
 

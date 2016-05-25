@@ -25,10 +25,5 @@
         "psr-4": {
             "Zeus\\": "src/"
         }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "ZeusTest\\": "test/src/"
-        }
     }
 }

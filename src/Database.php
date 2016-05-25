@@ -80,4 +80,9 @@ class Database
         return Database::getInstance()->entityManager;
     }
 
+    public function setEntityManager(EntityManager $em)
+    {
+        $this->entityManager = $em;
+    }
+
 }
