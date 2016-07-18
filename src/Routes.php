@@ -3,13 +3,11 @@
 namespace Zeus;
 
 use Doctrine\Common\Annotations\AnnotationRegistry;
-use Doctrine\Common\Annotations\SimpleAnnotationReader;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Saxulum\AnnotationManager\Manager\AnnotationManager;
 use Zeus\Annotations\Route;
 
-class Routes
-{
+class Routes {
 
     const PATH = './routes.json';
 
@@ -18,13 +16,11 @@ class Routes
     private $patterns;
     private static $instance;
 
-    private function __construct()
-    {
+    private function __construct() {
         // Prevents direct object instantiate
     }
 
-    public function __clone()
-    {
+    public function __clone() {
         throw new \Exception('Cannot clone a singleton class');
     }
 
@@ -32,8 +28,7 @@ class Routes
      *
      * @return Routes
      */
-    public static function getInstance()
-    {
+    public static function getInstance() {
         if (!isset(self::$instance)) {
             $className = __CLASS__;
             self::$instance = new $className;
@@ -41,17 +36,16 @@ class Routes
         return self::$instance;
     }
 
-    public static function updateRoutes()
-    {
+    public static function updateRoutes() {
         $zConf = Configuration::getInstance();
         if ($zConf->inDevelopment()) {
-            AnnotationRegistry::registerAutoloadNamespace('\Zeus\Annotations');
+            AnnotationRegistry::registerFile(__DIR__ . '/Annotations/Route.php');
             $route = new Route;
             $annotationReader = new AnnotationReader();
             $routes = array();
             foreach (self::getAllClasses() as $class) {
-                $className = $class->getName();
                 foreach ($class->getMethodInfos() as $method) {
+                    $className = $class->getName();
                     $methodName = $method->getName();
                     $ref = new \ReflectionMethod($className, $methodName);
                     $annot = $annotationReader->getMethodAnnotation($ref, $route);
@@ -60,38 +54,29 @@ class Routes
                     }
                 }
             }
-            if (!isset($routes[$zConf->getIndex()])) {
-                var_dump($routes);
-                echo "Index pattern '{$zConf->getIndex()}' is route for no class within this project.";
-            } else {
-                $routes['index'] = $routes[$zConf->getIndex()];
-                file_put_contents(self::PATH, json_encode($routes, JSON_PRETTY_PRINT));
-                echo 'Routes updated.';
-            }
+            $routes['index'] = $routes[$zConf->getIndex()];
+            $routes['routes/update'] = __CLASS__ . '::updateRoutes';
+            file_put_contents(self::PATH, json_encode($routes, JSON_PRETTY_PRINT));
+            echo 'Routes updated.';
         } else {
             echo 'Zeus is not in development mode. Please change this parameter to update routes.';
         }
     }
 
-    private static function getAllClasses()
-    {
-        $annotationReader = new SimpleAnnotationReader();
+    private static function getAllClasses() {
+        $annotationReader = new AnnotationReader();
         $annotationManager = new AnnotationManager($annotationReader);
         $zConf = Configuration::getInstance();
         return $annotationManager->buildClassInfosBasedOnPath(
                         $zConf->getInitialDirectory());
     }
 
-    public function loadRoutes()
-    {
-        $uriInfo = explode('/', filter_input(INPUT_SERVER, 'PHP_SELF'));
-        $mainScript = end($uriInfo);
+    public function loadRoutes() {
+        $phpSelfAr = explode('/', filter_input(INPUT_SERVER, 'PHP_SELF'));
+        $mainScript = end($phpSelfAr);
         $selfPart = str_replace($mainScript, '', filter_input(INPUT_SERVER, 'PHP_SELF'));
-        $request = str_replace($selfPart, '', filter_input(INPUT_SERVER, 'REQUEST_URI'));
-        $query = strpos($request, '?');
-        if ($query !== false) {
-            $request = substr($request, 0, $query);
-        }
+        $requestUri = str_replace($selfPart, '', filter_input(INPUT_SERVER, 'REQUEST_URI'));
+        $request = str_replace('?'. filter_input(INPUT_SERVER, 'QUERY_STRING'), '', $requestUri);
         if (substr($request, -1) == '/') {
             $this->request = substr($request, 0, -1);
         } else {
@@ -101,7 +86,7 @@ class Routes
             self::updateRoutes();
             exit;
         }
-        if (file_exists(self::PATH)) {
+        else if (file_exists(self::PATH)) {
             $this->routes = json_decode(file_get_contents(self::PATH));
             $this->patterns = array_keys(get_object_vars($this->routes));
             return $this;
@@ -114,8 +99,7 @@ class Routes
      * @param string $pattern
      * @return boolean
      */
-    private static function validatePattern($pattern)
-    {
+    private static function validatePattern($pattern) {
         if (substr($pattern, -1) === '/' ||
                 strpos('\\', $pattern) !== false ||
                 strpos(' ', $pattern) !== false) {
@@ -128,18 +112,15 @@ EOT;
         return true;
     }
 
-    public function getPatterns()
-    {
+    public function getPatterns() {
         return $this->patterns;
     }
 
-    public function getMethod($pattern)
-    {
+    public function getMethod($pattern) {
         return $this->routes->{$pattern};
     }
 
-    public function evaluateURL()
-    {
+    public function evaluateURL() {
         if (empty($this->request)) {
             call_user_func($this->getMethod('index'));
         } elseif (in_array($this->request, $this->patterns)) {
@@ -150,8 +131,7 @@ EOT;
         }
     }
 
-    public function processRequestPattern($pattern)
-    {
+    public function processRequestPattern($pattern) {
         $arRequest = $this->explodePattern($this->request);
         $arPattern = $this->explodePattern($pattern);
         $funcInfo = explode('::', $this->getMethod($pattern));
@@ -171,8 +151,7 @@ EOT;
         call_user_func_array($this->getMethod($pattern), $params);
     }
 
-    public function searchRequestPattern()
-    {
+    public function searchRequestPattern() {
         $arRequest = $this->explodePattern($this->request);
         $countRequest = count($arRequest);
         $exPatterns = array_map('Zeus\Routes::explodePattern', $this->patterns);
@@ -194,8 +173,7 @@ EOT;
         }
     }
 
-    public static function explodePattern($pattern)
-    {
+    public static function explodePattern($pattern) {
         return explode('/', $pattern);
     }
 

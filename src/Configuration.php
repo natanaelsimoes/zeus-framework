@@ -2,7 +2,8 @@
 
 namespace Zeus;
 
-class Configuration {
+class Configuration
+{
 
     const PATH = './zeus.json';
     const NOT_FOUND = 'Zeus configuration file not found.';
@@ -11,25 +12,27 @@ class Configuration {
     private $file;
     private static $instance;
 
-    private function __construct() {
+    private function __construct()
+    {
         if (!file_exists(self::PATH)) {
-            trigger_error(self::NOT_FOUND, E_USER_WARNING);
-        } else {
-            $this->file = json_decode(file_get_contents(self::PATH));
+            throw new \Exception(self::NOT_FOUND);
         }
+        $this->file = json_decode(file_get_contents(self::PATH));
         if (!isset($this->file->routes)) {
-            trigger_error(self::MIS_ROUTE, E_USER_WARNING);
+            throw new \Exception(self::MIS_ROUTE);
         }
     }
 
-    public function __clone() {
+    public function __clone()
+    {
         throw new \Exception('Cannot clone a singleton class');
     }
 
     /**
      * @return Configuration
      */
-    public static function getInstance() {
+    public static function getInstance()
+    {
         if (!isset(self::$instance)) {
             $className = __CLASS__;
             self::$instance = new $className;
@@ -37,27 +40,33 @@ class Configuration {
         return self::$instance;
     }
 
-    public function getInitialDirectory() {
+    public function getInitialDirectory()
+    {
         return './' . $this->file->routes->initialDirectory;
     }
 
-    public function getFile() {
+    public function getFile()
+    {
         return $this->file;
     }
 
-    public function getDatabase() {
+    public function getDatabase()
+    {
         return (isset($this->file->database)) ? $this->file->database : null;
     }
 
-    public function inDevelopment() {
+    public function inDevelopment()
+    {
         return $this->file->development;
     }
 
-    public function getIndex() {
+    public function getIndex()
+    {
         return $this->file->routes->index;
     }
 
-    public function getCache() {
+    public function getCache()
+    {
         if (isset($this->file->cache)) {
             if (strpos('/', $this->file->cache) !== false) {
                 return explode('/', $this->file->cache)[0];
@@ -66,7 +75,8 @@ class Configuration {
         }
     }
 
-    public function getCacheParam() {
+    public function getCacheParam()
+    {
         if (isset($this->file->cache)) {
             if (strpos('/', $this->file->cache) !== false) {
                 return explode('/', $this->file->cache)[1];
