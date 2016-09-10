@@ -56,6 +56,9 @@ class Routes {
                     }
                 }
             }
+            if(!array_key_exists($zConf->getIndex(), $routes)) {
+                throw new \Exception("Route {$zConf->getIndex()} set for index was not found.");
+            }
             $routes['index'] = $routes[$zConf->getIndex()];
             $routes['routes/update'] = __CLASS__ . '::updateRoutes';
             file_put_contents(self::PATH, json_encode($routes, JSON_PRETTY_PRINT));
