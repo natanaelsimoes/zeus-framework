@@ -4,6 +4,7 @@ namespace Zeus;
 
 use Doctrine\Common\Annotations\AnnotationRegistry;
 use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Annotations\SimpleAnnotationReader;
 use Saxulum\AnnotationManager\Manager\AnnotationManager;
 use Zeus\Annotations\Route;
 
@@ -40,6 +41,7 @@ class Routes {
         $zConf = Configuration::getInstance();
         if ($zConf->inDevelopment()) {
             AnnotationRegistry::registerFile(__DIR__ . '/Annotations/Route.php');
+            AnnotationRegistry::registerFile('./vendor/doctrine/orm/lib/Doctrine/ORM/Mapping/Driver/DoctrineAnnotations.php');
             $route = new Route;
             $annotationReader = new AnnotationReader();
             $routes = array();
@@ -64,7 +66,7 @@ class Routes {
     }
 
     private static function getAllClasses() {
-        $annotationReader = new AnnotationReader();
+        $annotationReader = new SimpleAnnotationReader();
         $annotationManager = new AnnotationManager($annotationReader);
         $zConf = Configuration::getInstance();
         return $annotationManager->buildClassInfosBasedOnPath(
