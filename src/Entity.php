@@ -5,7 +5,7 @@ namespace Zeus;
 class Entity
 {
     
-    public function find($id) {
+    public static function find($id) {
         $em = Database::getEntityManager();
         return $em->find(get_called_class(), $id);
     }
