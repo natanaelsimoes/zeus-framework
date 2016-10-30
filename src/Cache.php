@@ -2,7 +2,7 @@
 
 namespace Zeus;
 
-class Cache extends \Singleton
+class Cache extends Singleton
 {
 
     const DIR = './cache';

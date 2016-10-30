@@ -5,7 +5,7 @@ namespace Zeus;
 /**
  * Zeus Framework's main class
  */
-class Framework extends \Singleton
+class Framework extends Singleton
 {
 
     /**

@@ -9,7 +9,7 @@ use Doctrine\ORM\Tools\SchemaTool;
 /**
  * Class that controls database connection using Doctrine ORM
  */
-class Database extends \Singleton
+class Database extends Singleton
 {
 
     private $entityManager;

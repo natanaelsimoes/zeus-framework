@@ -5,7 +5,7 @@ namespace Zeus;
 /**
  * Zeus Configuration class access the zeus.json file to get its parameters
  */
-class Configuration extends \Singleton
+class Configuration extends Singleton
 {
 
     const PATH = './zeus.json';
