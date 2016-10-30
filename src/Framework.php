@@ -2,20 +2,13 @@
 
 namespace Zeus;
 
-class Framework
+class Framework extends \Singleton
 {
-
-    private static $instance;
 
     private function __construct()
     {
         self::initializeDatabase();
         self::evaluateRoute();
-    }
-
-    public function __clone()
-    {
-        throw new \Exception('Cannot clone a singleton class');
     }
 
     public static function getInstance()
@@ -25,11 +18,7 @@ class Framework
 
     public static function start()
     {
-        if (!isset(self::$instance)) {
-            $className = __CLASS__;
-            self::$instance = new $className;
-        }
-        return self::$instance;
+        parent::getInstance();
     }
 
     private static function initializeDatabase()

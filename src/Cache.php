@@ -2,7 +2,7 @@
 
 namespace Zeus;
 
-class Cache
+class Cache extends \Singleton
 {
 
     const DIR = './cache';
@@ -12,19 +12,6 @@ class Cache
      * @var \Doctrine\Common\Cache\Cache
      */
     private static $cache = null;
-    private static $instance;
-
-    /**
-     * @return Cache
-     */
-    public static function getInstance()
-    {
-        if (!isset(self::$instance)) {
-            $className = __CLASS__;
-            self::$instance = new $className;
-        }
-        return self::$instance;
-    }
 
     private function __construct()
     {
@@ -66,11 +53,6 @@ class Cache
                 self::$cache = new Cache\Dummy;
                 break;
         }
-    }
-
-    public function __clone()
-    {
-        throw new Exception('Clone is not allowed.');
     }
 
     public function fetch($id)

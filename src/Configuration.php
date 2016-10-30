@@ -2,7 +2,7 @@
 
 namespace Zeus;
 
-class Configuration
+class Configuration extends \Singleton
 {
 
     const PATH = './zeus.json';
@@ -10,7 +10,6 @@ class Configuration
     const MIS_ROUTE = 'Missing routes configuration.';
 
     private $file;
-    private static $instance;
 
     private function __construct()
     {
@@ -21,23 +20,6 @@ class Configuration
         if (!isset($this->file->routes)) {
             throw new \Exception(self::MIS_ROUTE);
         }
-    }
-
-    public function __clone()
-    {
-        throw new \Exception('Cannot clone a singleton class');
-    }
-
-    /**
-     * @return Configuration
-     */
-    public static function getInstance()
-    {
-        if (!isset(self::$instance)) {
-            $className = __CLASS__;
-            self::$instance = new $className;
-        }
-        return self::$instance;
     }
 
     public function getInitialDirectory()

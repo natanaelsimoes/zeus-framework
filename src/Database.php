@@ -6,12 +6,13 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\Setup;
 use Doctrine\ORM\Tools\SchemaTool;
 
-class Database {
+class Database extends \Singleton
+{
 
     private $entityManager;
-    private static $instance;
 
-    private function __construct($em = null) {
+    private function __construct($em = null)
+    {
         if (is_null($em)) {
             $zConf = Configuration::getInstance();
             if (!is_null($zConf->getDatabase())) {
@@ -31,49 +32,46 @@ class Database {
         }
     }
 
-    public function __clone() {
-        throw new \Exception('Cannot clone a singleton class');
-    }
-
     /**
-     * @return Database
+     * Creates the database using Doctrine Entities annotations
+     * @param bool $overwrite Drop database then recreate everything fresh
      */
-    public static function getInstance($em = null) {
-        if (!isset(self::$instance)) {
-            $className = __CLASS__;
-            self::$instance = new $className($em);
-        }
-        return self::$instance;
-    }
-
-    public function createSchema($overwrite = false) {
+    public function createSchema($overwrite = false)
+    {
         $tool = new SchemaTool($this->entityManager);
         $classes = $this->entityManager->getMetadataFactory()->getAllMetadata();
         if ($overwrite) {
             $tool->dropSchema($classes);
         }
         $tool->createSchema($classes);
-        return true;
-    }
-
-    public function updateSchema() {
-        $tool = new SchemaTool($this->entityManager);
-        $classes = $this->entityManager->getMetadataFactory()->getAllMetadata();
-        $tool->updateSchema($classes);
-        return true;
-    }
-
-    public function dropSchema() {
-        $tool = new SchemaTool($this->entityManager);
-        $classes = $this->entityManager->getMetadataFactory()->getAllMetadata();
-        $tool->dropSchema($classes);
-        return true;
     }
 
     /**
+     * Updates the database with latest changes on classes
+     */
+    public function updateSchema()
+    {
+        $tool = new SchemaTool($this->entityManager);
+        $classes = $this->entityManager->getMetadataFactory()->getAllMetadata();
+        $tool->updateSchema($classes);
+    }
+
+    /**
+     * Drops the entire database
+     */
+    public function dropSchema()
+    {
+        $tool = new SchemaTool($this->entityManager);
+        $classes = $this->entityManager->getMetadataFactory()->getAllMetadata();
+        $tool->dropSchema($classes);
+    }
+
+    /**
+     * Returns a configured Doctrine Entity Manager
      * @return EntityManager
      */
-    public static function getEntityManager() {
+    public static function getEntityManager()
+    {
         return Database::getInstance()->entityManager;
     }
 
