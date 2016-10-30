@@ -38,33 +38,27 @@ class Routes extends Singleton
      */
     private $patterns;
 
+    /**
+     * Simple wrapper to enable IDE intelisense
+     * @return \Zeus\Routes
+     */
+    public function getInstance()
+    {
+        return parent::getInstance();
+    }
+
+    /**
+     * Reads the source code and updates routes
+     * @throws \Exception If the index pattern configured at zeus.json not exists
+     */
     public static function updateRoutes()
     {
         $zConf = Configuration::getInstance();
         if ($zConf->inDevelopment()) {
             AnnotationRegistry::registerFile(__DIR__ . '/Annotations/Route.php');
             AnnotationRegistry::registerFile('./vendor/doctrine/orm/lib/Doctrine/ORM/Mapping/Driver/DoctrineAnnotations.php');
-            $route = new Route;
-            $annotationReader = new AnnotationReader();
-            $newRoutes = array();
-            foreach (self::getAllClasses() as $class) {
-                foreach ($class->getMethodInfos() as $method) {
-                    $className = $class->getName();
-                    $methodName = $method->getName();
-                    $ref = new \ReflectionMethod($className, $methodName);
-                    $annot = $annotationReader->getMethodAnnotation($ref, $route);
-                    if (!is_null($annot) && self::validatePattern($annot->pattern)) {
-                        if (!strpos($annot->pattern, ';')) {
-                            self::addRoutePattern(&$newRoutes, $annot->pattern, $className, $methodName);
-                        } else {
-                            $patterns = explode(';', $annot->pattern);
-                            foreach ($patterns as $pattern) {
-                                self::addRoutePattern(&$newRoutes, $pattern, $className, $methodName);
-                            }
-                        }
-                    }
-                }
-            }
+            $zeusRoutes = self::getInstance();
+            $newRoutes = $zeusRoutes->loadRoutesFromSource();
             if (!array_key_exists($zConf->getIndex(), $newRoutes)) {
                 throw new \Exception("Route {$zConf->getIndex()} set for index was not found.");
             }
@@ -77,12 +71,28 @@ class Routes extends Singleton
         }
     }
 
-    private static function addRoutePattern(array $routes, $pattern, $className, $methodName)
+    /**
+     * Add to $routes array what $pattern trigger the $methodName within a $className
+     * @param array $routes The array to be filled
+     * @param string $pattern The pattern that triggers a method
+     * @param string $className The class name
+     * @param string $methodName The method name
+     */
+    private function addRoutePattern(array $routes, $pattern, $className, $methodName)
     {
-        $routes[$pattern] = "$className::$methodName";
+        $methodCompletePath = "$className::$methodName";
+        $patterns = explode(';', $pattern);
+        foreach ($patterns as $pattern) {
+            $routes[$pattern] = $methodCompletePath;
+        }
     }
 
-    private static function getAllClasses()
+    /**
+     * Returns all classes information inside Zeus initial directory
+     * configured at zeus.json
+     * @return \Saxulum\AnnotationManager\Helper\ClassInfo
+     */
+    private function getAllClasses()
     {
         $annotationReader = new SimpleAnnotationReader();
         $annotationManager = new AnnotationManager($annotationReader);
@@ -94,7 +104,7 @@ class Routes extends Singleton
     /**
      * Loads routes in this class attributes
      * @return \Zeus\Routes
-     * @throws \Exception
+     * @throws \Exception If routes file do not exists
      */
     public function loadRoutes()
     {
@@ -121,10 +131,37 @@ class Routes extends Singleton
     }
 
     /**
-     * @param string $pattern
-     * @return boolean
+     * Loads routes from source code
+     * @return array Array of routes
      */
-    private static function validatePattern($pattern)
+    private function loadRoutesFromSource()
+    {
+        $routeAnnotation = new Route;
+        $annotationReader = new AnnotationReader();
+        $routes = array();
+        foreach ($this->getAllClasses() as $class) {
+            foreach ($class->getMethodInfos() as $method) {
+                $className = $class->getName();
+                $methodName = $method->getName();
+                $reflectionMethod = new \ReflectionMethod($className, $methodName);
+                $methodAnnotation = $annotationReader->getMethodAnnotation($reflectionMethod, $routeAnnotation);
+                if (!is_null($methodAnnotation) && $this->validatePattern($methodAnnotation->pattern)) {
+                    $this->addRoutePattern(&$routes, $methodAnnotation->pattern, $className, $methodName);
+                }
+            }
+        }
+        return $routes;
+    }
+
+    /**
+     * Validates the pattern within a method marked with Route annotation. 
+     * It cannot end with / (slash) or contains \ (backslash) or
+     * contains an empty space
+     * @param string $pattern The pattern that triggers the method
+     * @return boolean
+     * @throws \Exception If not following routing rules
+     */
+    private function validatePattern($pattern)
     {
         if (substr($pattern, -1) === '/' ||
                 strpos('\\', $pattern) !== false ||
@@ -138,16 +175,29 @@ EOT;
         return true;
     }
 
+    /**
+     * Returns an array of string of source patterns
+     * @return array
+     */
     public function getPatterns()
     {
         return $this->patterns;
     }
 
+    /**
+     * Returns the method for a given pattern
+     * @param string $pattern The pattern
+     * @return string The method
+     */
     public function getMethod($pattern)
     {
         return $this->routes->{$pattern};
     }
 
+    /**
+     * Evaluates the user entered URL to decide the best route to follow
+     * (that matches a pattern)
+     */
     public function evaluateURL()
     {
         if (empty($this->request)) {
@@ -160,6 +210,11 @@ EOT;
         }
     }
 
+    /**
+     * Proccess the request from a given pattern and detach parameters to
+     * include at the method call properly
+     * @param string $pattern The pattern
+     */
     public function processRequestPattern($pattern)
     {
         $arRequest = $this->explodePattern($this->request);
@@ -181,11 +236,17 @@ EOT;
         call_user_func_array($this->getMethod($pattern), $params);
     }
 
+    /**
+     * Searchs inside loaded routes if the pattern matches with something
+     * @return string The matched pattern
+     */
     public function searchRequestPattern()
     {
         $arRequest = $this->explodePattern($this->request);
         $countRequest = count($arRequest);
-        $exPatterns = array_map('Zeus\Routes::explodePattern', $this->patterns);
+        $exPatterns = array_map(function($p) {
+            return explode('/', $p);
+        }, $this->patterns);
         $coPatterns = array_filter($exPatterns, function ($elem) use ($countRequest) {
             return count($elem) === $countRequest;
         });
@@ -202,11 +263,6 @@ EOT;
         } else {
             return $this->patterns[array_keys($coPatterns)[0]];
         }
-    }
-
-    public static function explodePattern($pattern)
-    {
-        return explode('/', $pattern);
     }
 
 }

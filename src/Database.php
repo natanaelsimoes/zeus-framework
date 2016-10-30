@@ -6,11 +6,19 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\Setup;
 use Doctrine\ORM\Tools\SchemaTool;
 
+/**
+ * Class that controls database connection using Doctrine ORM
+ */
 class Database extends \Singleton
 {
 
     private $entityManager;
 
+    /**
+     * Starts database connection using parameters configured at zeus.json
+     * or the EntityManager object 
+     * @param EntityManager $em An externally configured EntityManager object
+     */
     private function __construct($em = null)
     {
         if (is_null($em)) {

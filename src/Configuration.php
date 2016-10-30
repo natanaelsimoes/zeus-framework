@@ -2,6 +2,9 @@
 
 namespace Zeus;
 
+/**
+ * Zeus Configuration class access the zeus.json file to get its parameters
+ */
 class Configuration extends \Singleton
 {
 
@@ -11,6 +14,10 @@ class Configuration extends \Singleton
 
     private $file;
 
+    /**
+     * Laod the zeus.json file into this class
+     * @throws \Exception If zeus.file do not exists
+     */
     private function __construct()
     {
         if (!file_exists(self::PATH)) {
