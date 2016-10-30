@@ -10,31 +10,26 @@ abstract class Singleton
 {
 
     /**
-     * The instance of Singleton specialized class
-     * @var Singleton
-     */
-    private static $instance;
-
-    /**
      * No singleton class can be cloned
      * @throws \Exception When you try to clone
      */
-    public function __clone()
+    final private function __clone()
     {
         throw new \Exception('Cannot clone a singleton class');
     }
 
     /**
-     * Returns the static instance of the Singleton specialized class
+     * Returns the static instance of the Singleton called class
      * @return Singleton
      */
     public static function getInstance()
     {
-        if (!isset(self::$instance)) {
-            $className = get_called_class();
-            self::$instance = new $className;
+        static $instances = array();
+        $calledClass = get_called_class();
+        if (!isset($instances[$calledClass])) {
+            $instances[$calledClass] = new $calledClass();
         }
-        return self::$instance;
+        return $instances[$calledClass];
     }
 
 }

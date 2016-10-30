@@ -12,10 +12,10 @@ class Framework extends Singleton
      * Initialize database (if configured) and evaluate route given by URL
      * @todo include cache support before anything
      */
-    private function __construct()
+    protected function __construct()
     {
-        self::initializeDatabase();
-        self::evaluateRoute();
+        $this->initializeDatabase();
+        $this->evaluateRoute();
     }
 
     /**
@@ -39,7 +39,7 @@ class Framework extends Singleton
     /**
      * Initialize the database connection
      */
-    private static function initializeDatabase()
+    private function initializeDatabase()
     {
         Database::getInstance();
     }
@@ -47,7 +47,7 @@ class Framework extends Singleton
     /**
      * Evaluate route by given URL
      */
-    private static function evaluateRoute()
+    private function evaluateRoute()
     {
         Routes::getInstance()
                 ->loadRoutes()

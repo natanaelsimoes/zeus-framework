@@ -42,7 +42,7 @@ class Routes extends Singleton
      * Simple wrapper to enable IDE intelisense
      * @return \Zeus\Routes
      */
-    public function getInstance()
+    public static function getInstance()
     {
         return parent::getInstance();
     }
@@ -78,7 +78,7 @@ class Routes extends Singleton
      * @param string $className The class name
      * @param string $methodName The method name
      */
-    private function addRoutePattern(array $routes, $pattern, $className, $methodName)
+    private function addRoutePattern(array &$routes, $pattern, $className, $methodName)
     {
         $methodCompletePath = "$className::$methodName";
         $patterns = explode(';', $pattern);
@@ -146,7 +146,7 @@ class Routes extends Singleton
                 $reflectionMethod = new \ReflectionMethod($className, $methodName);
                 $methodAnnotation = $annotationReader->getMethodAnnotation($reflectionMethod, $routeAnnotation);
                 if (!is_null($methodAnnotation) && $this->validatePattern($methodAnnotation->pattern)) {
-                    $this->addRoutePattern(&$routes, $methodAnnotation->pattern, $className, $methodName);
+                    $this->addRoutePattern($routes, $methodAnnotation->pattern, $className, $methodName);
                 }
             }
         }

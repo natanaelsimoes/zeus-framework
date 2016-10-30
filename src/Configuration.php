@@ -18,7 +18,7 @@ class Configuration extends Singleton
      * Laod the zeus.json file into this class
      * @throws \Exception If zeus.file do not exists
      */
-    private function __construct()
+    protected function __construct()
     {
         if (!file_exists(self::PATH)) {
             throw new \Exception(self::NOT_FOUND);

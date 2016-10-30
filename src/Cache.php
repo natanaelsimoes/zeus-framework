@@ -13,7 +13,7 @@ class Cache extends Singleton
      */
     private static $cache = null;
 
-    private function __construct()
+    protected function __construct()
     {
         $zConf = Configuration::getInstance();
         switch ($zConf->getCache()) {

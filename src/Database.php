@@ -19,7 +19,7 @@ class Database extends Singleton
      * or the EntityManager object 
      * @param EntityManager $em An externally configured EntityManager object
      */
-    private function __construct($em = null)
+    protected function __construct($em = null)
     {
         if (is_null($em)) {
             $zConf = Configuration::getInstance();
