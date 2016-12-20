@@ -22,12 +22,13 @@ abstract class Singleton
      * Returns the static instance of the Singleton called class
      * @return Singleton
      */
-    public static function getInstance()
+    public static function getInstance($_ = null)
     {
         static $instances = array();
         $calledClass = get_called_class();
         if (!isset($instances[$calledClass])) {
-            $instances[$calledClass] = new $calledClass();
+            $params = func_get_args();
+            $instances[$calledClass] = new $calledClass(...$params);
         }
         return $instances[$calledClass];
     }
