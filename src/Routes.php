@@ -42,7 +42,7 @@ class Routes extends Singleton
      * Simple wrapper to enable IDE intelisense
      * @return \Zeus\Routes
      */
-    public static function getInstance()
+    public static function getInstance($_ = null)
     {
         return parent::getInstance();
     }

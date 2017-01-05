@@ -23,7 +23,7 @@ class Framework extends Singleton
      * start button to initiliaze the framework
      * @throws \Exception
      */
-    public static function getInstance()
+    public static function getInstance($_ = null)
     {
         throw new \Exception('You must use Zeus\Framework::start() function.');
     }
