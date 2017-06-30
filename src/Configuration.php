@@ -2,7 +2,7 @@
 
 namespace Zeus;
 
-class Configuration extends \Singleton
+class Configuration extends Common\Singleton
 {
 
     const PATH = './zeus.json';
@@ -11,7 +11,7 @@ class Configuration extends \Singleton
 
     private $file;
 
-    private function __construct()
+    protected function __construct()
     {
         if (!file_exists(self::PATH)) {
             throw new \Exception(self::NOT_FOUND);

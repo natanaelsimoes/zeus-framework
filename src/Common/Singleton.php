@@ -1,6 +1,6 @@
 <?php
 
-namespace Zeus;
+namespace Zeus\Common;
 
 /**
  * Defines a Singleton structure, meant to be extends by classes that
@@ -13,7 +13,7 @@ abstract class Singleton
      * The instance of Singleton specialized class
      * @var Singleton
      */
-    private static $instance;
+    private static $instance = array();
 
     /**
      * No singleton class can be cloned
@@ -30,11 +30,11 @@ abstract class Singleton
      */
     public static function getInstance()
     {
-        if (!isset(self::$instance)) {
-            $className = get_called_class();
-            self::$instance = new $className;
+        $className = get_called_class();
+        if (!isset(self::$instance[$className])) {
+            self::$instance[$className] = new $className;
         }
-        return self::$instance;
+        return self::$instance[$className];
     }
 
 }

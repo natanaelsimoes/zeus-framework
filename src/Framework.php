@@ -2,10 +2,10 @@
 
 namespace Zeus;
 
-class Framework extends \Singleton
+class Framework extends Common\Singleton
 {
 
-    private function __construct()
+    protected function __construct()
     {
         self::initializeDatabase();
         self::evaluateRoute();

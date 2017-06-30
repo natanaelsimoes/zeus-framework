@@ -12,13 +12,23 @@ use Zeus\Annotations\Route;
  * This classe resolves URL routing by using annotations on methods. 
  * It specifies a pattern that, when matched, triggers that operation.
  */
-class Routes extends Singleton
+class Routes extends Common\Singleton
 {
 
     /**
      * The file path where routes will be setup
      */
-    const PATH = './routes.json';
+    const ROUTES_PATH = './routes.json';
+
+    /**
+     * The file path where the @Route annotation will be setup
+     */
+    const ROUTE_ANNOTATION_PATH = '/Annotations/Route.php';
+
+    /**
+     * The file path where all Doctrine Annotations are mapped
+     */
+    const DOCTRINE_ANNOTATIONS_PATH = '../vendor/doctrine/orm/lib/Doctrine/ORM/Mapping/Driver/DoctrineAnnotations.php';
 
     /**
      * The request string captured from URL
@@ -38,51 +48,64 @@ class Routes extends Singleton
      */
     private $patterns;
 
-    public static function updateRoutes()
+    public function updateRoutes()
     {
+        $this->checkDevMode();
+        $newRoutes = array();
         $zConf = Configuration::getInstance();
-        if ($zConf->inDevelopment()) {
-            AnnotationRegistry::registerFile(__DIR__ . '/Annotations/Route.php');
-            AnnotationRegistry::registerFile('./vendor/doctrine/orm/lib/Doctrine/ORM/Mapping/Driver/DoctrineAnnotations.php');
-            $route = new Route;
-            $annotationReader = new AnnotationReader();
-            $newRoutes = array();
-            foreach (self::getAllClasses() as $class) {
-                foreach ($class->getMethodInfos() as $method) {
-                    $className = $class->getName();
-                    $methodName = $method->getName();
-                    $ref = new \ReflectionMethod($className, $methodName);
-                    $annot = $annotationReader->getMethodAnnotation($ref, $route);
-                    if (!is_null($annot) && self::validatePattern($annot->pattern)) {
-                        if (!strpos($annot->pattern, ';')) {
-                            self::addRoutePattern(&$newRoutes, $annot->pattern, $className, $methodName);
-                        } else {
-                            $patterns = explode(';', $annot->pattern);
-                            foreach ($patterns as $pattern) {
-                                self::addRoutePattern(&$newRoutes, $pattern, $className, $methodName);
-                            }
-                        }
-                    }
+        $this->generateNewRoutes($newRoutes);
+        if (!array_key_exists($zConf->getIndex(), $newRoutes)) {
+            echo "Route {$zConf->getIndex()} set for index was not found.";
+            exit;
+        }
+        $newRoutes['index'] = $newRoutes[$zConf->getIndex()];
+        $newRoutes['routes/update'] = __CLASS__ . '::updateRoutes';
+        file_put_contents(self::ROUTES_PATH, json_encode($newRoutes, JSON_PRETTY_PRINT));
+        echo 'Routes updated.';
+    }
+
+    private function generateNewRoutes(array &$newRoutes)
+    {
+        AnnotationRegistry::registerFile(__DIR__ . self::ROUTE_ANNOTATION_PATH);
+        AnnotationRegistry::registerFile(self::DOCTRINE_ANNOTATIONS_PATH);
+        $annotationReader = new AnnotationReader();
+        foreach ($this->getAllClasses() as $class) {
+            foreach ($class->getMethodInfos() as $method) {
+                $method = new \ReflectionMethod($class->getName(), $method->getName());
+                $annotation = $annotationReader->getMethodAnnotation($method, new Route);
+                if (!is_null($annotation)) {
+                    $this->addRoutePattern($newRoutes, $method, $annotation);
                 }
             }
-            if (!array_key_exists($zConf->getIndex(), $newRoutes)) {
-                throw new \Exception("Route {$zConf->getIndex()} set for index was not found.");
-            }
-            $newRoutes['index'] = $newRoutes[$zConf->getIndex()];
-            $newRoutes['routes/update'] = __CLASS__ . '::updateRoutes';
-            file_put_contents(self::PATH, json_encode($newRoutes, JSON_PRETTY_PRINT));
-            echo 'Routes updated.';
-        } else {
-            echo 'Zeus is not in development mode. Please change this parameter to update routes.';
         }
     }
 
-    private static function addRoutePattern(array $routes, $pattern, $className, $methodName)
+    private function checkDevMode()
     {
-        $routes[$pattern] = "$className::$methodName";
+        $zConf = Configuration::getInstance();
+        if (!$zConf->inDevelopment()) {
+            echo 'Zeus is not in development mode. Please change this parameter to update routes.';
+            exit;
+        }
     }
 
-    private static function getAllClasses()
+    private function addRoutePattern(array &$routes, \ReflectionMethod &$method, Route &$annotation)
+    {
+        if (!is_null($annotation) && self::validatePattern($annotation->pattern)) {
+            if (!strpos($annotation->pattern, ';')) {
+                $routes[$annotation->pattern] = "{$method->class}::{$method->name}";
+                return;
+            }
+            $patterns = explode(';', $annotation->pattern);
+            foreach ($patterns as $pattern) {
+                $nAnnot = new Route();
+                $nAnnot->pattern = $pattern;
+                $this->addRoutePattern($routes, $method, $nAnnot);
+            }
+        }
+    }
+
+    private function getAllClasses()
     {
         $annotationReader = new SimpleAnnotationReader();
         $annotationManager = new AnnotationManager($annotationReader);
@@ -100,19 +123,16 @@ class Routes extends Singleton
     {
         $serverPHPSelf = filter_input(INPUT_SERVER, 'PHP_SELF');
         $serverPHPRequest = filter_input(INPUT_SERVER, 'REQUEST_URI');
-        $serverPHPQuery = filter_input(INPUT_SERVER, 'QUERY_STRING');
-        $phpSelfAr = explode('/', $serverPHPSelf);
-        $mainScript = end($phpSelfAr);
-        $selfPart = str_replace($mainScript, '', $serverPHPSelf);
+        $selfPart = substr($serverPHPSelf, 0, strrpos($serverPHPSelf, '/') + 1);
         $requestUri = str_replace($selfPart, '', $serverPHPRequest);
-        $request = str_replace("?$serverPHPQuery", '', $requestUri);
+        $request = substr($requestUri, 0, strpos($requestUri, '?'));
         $this->request = (substr($request, -1) === '/') ?
                 substr($request, 0, -1) : $request;
         if ($request === 'routes/update') {
-            self::updateRoutes();
+            $this->updateRoutes();
             exit;
-        } else if (file_exists(self::PATH)) {
-            $this->routes = json_decode(file_get_contents(self::PATH));
+        } else if (file_exists(self::ROUTES_PATH)) {
+            $this->routes = json_decode(file_get_contents(self::ROUTES_PATH));
             $this->patterns = array_keys(get_object_vars($this->routes));
             return $this;
         } else {
@@ -124,7 +144,7 @@ class Routes extends Singleton
      * @param string $pattern
      * @return boolean
      */
-    private static function validatePattern($pattern)
+    private static function validatePattern(string $pattern)
     {
         if (substr($pattern, -1) === '/' ||
                 strpos('\\', $pattern) !== false ||
@@ -133,7 +153,8 @@ class Routes extends Singleton
 Route pattern $pattern not following routing rules: patterns cannot end with /
     and have any whitespaces or \\
 EOT;
-            throw new \Exception($patternRules);
+            trigger_error($patternRules, E_USER_ERROR);
+            return false;
         }
         return true;
     }
@@ -143,7 +164,7 @@ EOT;
         return $this->patterns;
     }
 
-    public function getMethod($pattern)
+    public function getMethod(string $pattern)
     {
         return $this->routes->{$pattern};
     }
@@ -160,7 +181,7 @@ EOT;
         }
     }
 
-    public function processRequestPattern($pattern)
+    public function processRequestPattern(string $pattern)
     {
         $arRequest = $this->explodePattern($this->request);
         $arPattern = $this->explodePattern($pattern);
@@ -204,7 +225,7 @@ EOT;
         }
     }
 
-    public static function explodePattern($pattern)
+    public static function explodePattern(string $pattern)
     {
         return explode('/', $pattern);
     }

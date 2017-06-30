@@ -52,7 +52,7 @@ class Entity
      * @return \Doctrine\ORM\QueryBuilder
      * @see http://docs.doctrine-project.org/projects/doctrine-orm/en/latest/reference/query-builder.html
      */
-    public static function select($alias, $fields = null)
+    public static function select(string $alias, $fields = null)
     {
         $em = Database::getEntityManager();
         return $em->createQueryBuilder()->select(is_null($fields) ? $alias : $fields)->from(get_called_class(), $alias);

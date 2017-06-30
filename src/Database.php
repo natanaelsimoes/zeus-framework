@@ -6,12 +6,12 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\Setup;
 use Doctrine\ORM\Tools\SchemaTool;
 
-class Database extends \Singleton
+class Database extends Common\Singleton
 {
 
     private $entityManager;
 
-    private function __construct($em = null)
+    protected function __construct(EntityManager $em = null)
     {
         if (is_null($em)) {
             $zConf = Configuration::getInstance();
@@ -26,6 +26,9 @@ class Database extends \Singleton
                             'password' => $zConf->getDatabase()->password,
                             'dbname' => $zConf->getDatabase()->dbname,
                                 ), $ormConfig);
+            } else {
+                trigger_error("Database configuration not found at zeus.json"
+                        , E_USER_WARNING);
             }
         } else {
             $this->entityManager = $em;
@@ -36,7 +39,7 @@ class Database extends \Singleton
      * Creates the database using Doctrine Entities annotations
      * @param bool $overwrite Drop database then recreate everything fresh
      */
-    public function createSchema($overwrite = false)
+    public function createSchema(bool $overwrite = false)
     {
         $tool = new SchemaTool($this->entityManager);
         $classes = $this->entityManager->getMetadataFactory()->getAllMetadata();

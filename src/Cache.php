@@ -2,7 +2,7 @@
 
 namespace Zeus;
 
-class Cache extends \Singleton
+class Cache extends Common\Singleton
 {
 
     const DIR = './cache';
@@ -55,24 +55,24 @@ class Cache extends \Singleton
         }
     }
 
-    public function fetch($id)
+    public function fetch(string $id)
     {
         return self::$cache->fetch($id);
     }
 
-    public function contais($id)
+    public function contais(string $id)
     {
         return self::$cache->contains($id);
     }
 
-    public function save($id, $data, $lifeTime = Cache\CacheTime::ONE_HOUR)
+    public function save(string $id, $data, Cache\CacheTime $lifeTime = Cache\CacheTime::ONE_HOUR)
     {
         return self::$cache->save($id, $data, $lifeTime);
     }
 
-    public function delete($var)
+    public function delete(string $id)
     {
-        return self::$cache->delete($var);
+        return self::$cache->delete($id);
     }
 
     public function getStats()
