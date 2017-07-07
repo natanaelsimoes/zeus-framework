@@ -32,7 +32,8 @@ abstract class Singleton
     {
         $className = get_called_class();
         if (!isset(self::$instance[$className])) {
-            self::$instance[$className] = call_user_func_array('__construct', func_num_args());
+            $args = func_get_args();
+            self::$instance[$className] = empty($args) ? new $className : call_user_func_array('__construct', $args);
         }
         return self::$instance[$className];
     }
