@@ -125,7 +125,8 @@ class Routes extends Common\Singleton
         $serverPHPRequest = filter_input(INPUT_SERVER, 'REQUEST_URI');
         $selfPart = substr($serverPHPSelf, 0, strrpos($serverPHPSelf, '/') + 1);
         $requestUri = str_replace($selfPart, '', $serverPHPRequest);
-        $request = substr($requestUri, 0, strpos($requestUri, '?'));
+        $queryPos = strpos($requestUri, '?');
+        $request = $queryPos !== false ? substr($requestUri, 0, strpos($requestUri, '?')) : $requestUri;
         $this->request = (substr($request, -1) === '/') ?
                 substr($request, 0, -1) : $request;
         if ($request === 'routes/update') {

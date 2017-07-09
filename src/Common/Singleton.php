@@ -28,7 +28,7 @@ abstract class Singleton
      * Returns the static instance of the Singleton specialized class
      * @return Singleton
      */
-    public static function getInstance($_ = null)
+    public static function getInstance()
     {
         $className = get_called_class();
         if (!isset(self::$instance[$className])) {
